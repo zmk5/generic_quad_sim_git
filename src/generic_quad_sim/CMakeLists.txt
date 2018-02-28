@@ -71,8 +71,8 @@ LINK_DIRECTORIES(${GAZEBO_LIBRARY_DIRS})
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
-add_library(GazeboRosRotorPropulsion SHARED quadrotor_drive.cpp)
-target_link_libraries(GazeboRosRotorPropulsion ${GAZEBO_librarires})
+#add_library(GazeboRosRotorPropulsion SHARED quadrotor_drive.cpp)
+#target_link_libraries(GazeboRosRotorPropulsion ${GAZEBO_librarires})
 
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
