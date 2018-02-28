@@ -1,0 +1,2 @@
+generic_quad_sim
+-DCATKIN_DEVEL_PREFIX=/home/aniketrs/generic_quad_sim_finale/devel -DCMAKE_INSTALL_PREFIX=/home/aniketrs/generic_quad_sim_finale/install -G Unix Makefiles

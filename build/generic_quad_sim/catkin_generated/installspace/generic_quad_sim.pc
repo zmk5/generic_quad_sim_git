@@ -1,0 +1,8 @@
+prefix=/home/aniketrs/generic_quad_sim_finale/install
+
+Name: generic_quad_sim
+Description: Description of generic_quad_sim
+Version: 0.0.0
+Cflags: -I/home/aniketrs/generic_quad_sim_finale/install/include
+Libs: -L/home/aniketrs/generic_quad_sim_finale/install/lib -lquadrotor_drive_plugin
+Requires: 

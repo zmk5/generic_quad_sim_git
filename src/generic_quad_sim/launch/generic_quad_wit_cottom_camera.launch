@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<launch>
+	<group ns="generic_quad">
+		<param name="tf_prefix" value="generic_quad"/>
+		<param name="robot_description"
+			   command="$(find xacro)/xacro.py '$(find generic_quad_sim)/urdf/quad_final_with_camera_quadrotor_drive.urdf.xacro'"/>
+		 <!--<node name="spawn_model" pkg="gazebo" type="spawn_model" args="-urdf -param robot_description -v -model generic_quad_sim" respawn="false" output="screen" />-->
+	</group>
+</launch>

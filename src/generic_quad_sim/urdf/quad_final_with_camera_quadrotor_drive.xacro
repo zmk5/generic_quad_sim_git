@@ -1,0 +1,673 @@
+<?xml version="1.0"?>
+<robot name="generic_quad_sim" xmlns:xacro="http://www.ros.org/wiki/xacro">
+	<!-- Value of pi -->
+	<xacro:property name="PI" value="3.14149265358979" />
+	
+	<!-- Dimensions of the base -->
+	<xacro:property name="l_base" value="0.05" />
+	<xacro:property name="w_base" value="0.05" />
+	<xacro:property name="h_base" value="0.04" />
+	<xacro:property name="base_m" value=" 0.300" />
+	<xacro:property name="base_x" value="0.0" />
+	<xacro:property name="base_y" value="0.0" />
+	<xacro:property name="base_z" value="0.02" />
+	<xacro:property name="base_offset" value="0.02"/>
+	<xacro:property name="base_offset" value="0.01"/>
+	<xacro:property name="base_roll" value="0.0" />
+	<xacro:property name="base_pitch" value="0.0" />
+	<xacro:property name="base_yaw" value="0.0" />
+
+
+	<!-- Dimensions of the arms -->
+	<xacro:property name="l_arm" value="0.2" />
+	<xacro:property name="w_arm" value="0.04" />
+	<xacro:property name="h_arm" value="0.02" />
+	<xacro:property name="arm_m" value="0.01" />
+	
+	<!-- Dimensions of Motor -->
+	<xacro:property name="motor_radius" value="0.02" />
+	<xacro:property name="motor_height" value="0.02" />
+	<xacro:property name="motor_m" value="0.08"/>
+	
+	<!-- Dimesnions of Rotor -->
+	<xacro:property name="rotor_radius" value ="${l_arm*0.5}" />
+	<xacro:property name="rotor_height" value="${h_arm/100.0}" />
+	<xacro:property name="rotor_m" value="0.001" />
+
+	<!-- Dimensions of the camera sensor -->
+	<xacro:property name="camera_length" value="${l_base*0.1}" />
+	<xacro:property name="camera_width" value="${w_base*0.1}" />
+	<xacro:property name="camera_height" value="${h_base*0.2}" />
+	<xacro:property name="camera_mass" value="0.03"/>
+	<xacro:property name="horizontal_fov" value="${80*PI/180}"/>
+	<xacro:property name="image_width" value="800"/>
+	<xacro:property name="image_height" value="600"/> -->
+
+	<!-- Dimension of the imu sensor-->
+	<xacro:property name="imu_length" value="0.02"/>
+	<xacro:property name="imu_width" value="0.02"/>
+	<xacro:property name="imu_height" value="0.02"/>
+	<xacro:property name="imu_mass" value="0.001" />
+
+
+
+	<!-- Base Link -->
+	<link name="base_link">
+		<visual>
+			<geometry>
+				<box size="${l_base} ${w_base} ${h_base}" />
+			</geometry>
+			<origin xyz="${base_x} ${base_y} ${2*base_z}" rpy="${base_roll} ${base_pitch} ${base_yaw}"/>
+			<material name="balck">
+				<color rgba="0 0 0 1"/>
+			</material>
+		</visual>
+		<collsion> 
+			<geometry>
+				<box size="${l_base} ${w_base} ${h_base}" />
+				<origin xyz="${base_x} ${base_y} ${base_z + base_offset}" rpy="${base_roll} ${base_pitch} ${base_yaw}"/>
+			</geometry>
+		</collsion>
+		<inertial>
+			<mass value="${base_m}"/>
+			<inertia ixx="${1/12 * base_m * (w_base*w_base + l_base*l_base) }" ixy="0" ixz="0" 
+					 iyy="${1/12 * base_m * (w_base*w_base + h_base*h_base) }" iyz="0" izz="${1/12 * base_m * (l_base*l_base + w_base*w_base) }" />
+		</inertial>
+	</link>
+
+	 <gazebo reference="base_link">
+		<material>Gazebo/Black</material>
+		<pose>0 0 0.02 0 0 0</pose>
+	</gazebo>
+
+	<!-- Imu Link -->
+	<link name="imu_link">
+		<visual>
+			<origin xyz="${base_x} ${base_y} ${base_z}" rpy="0 0 0"/>
+			<geometry>
+				<box size="${imu_length} ${imu_width} ${imu_height}"/>
+			</geometry>
+		</visual>
+		<collision>
+			<origin xyz="${base_x} ${base_y} ${base_z}" rpy="0 0 0"/>
+			<geometry>
+				<box size="${imu_length} ${imu_width} ${imu_height}"/>
+			</geometry>
+		</collision>
+		<inertial>
+			<mass value="${imu_mass}"/>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<inertia ixx="${1/12 * imu_mass * imu_width * imu_width}" ixy="0.0" ixz="0.0" iyy="${1/12 * imu_mass * imu_length *imu_length}" iyz="0.0" izz="${1/12 * (imu_length * imu_length + imu_width * imu_width)}"/>
+		</inertial>
+	</link>
+
+	<gazebo reference="imu_link">
+		<gravity>true</gravity>
+		<material>Gazebo/Black</material>
+		<pose>0 0 0 0 0 0</pose>
+		<sensor name="imu_sensor" type="imu">
+			<always_on>1</always_on>
+			<update_rate>1000</update_rate>
+			<visualize>1</visualize>
+			<topic>__default_topic__</topic>
+			<plugin name="imu_plugin" filename="libgazebo_ros_imu_sensor.so">
+				<topicName>imu_data</topicName>
+				<bodyName>imu_link</bodyName>
+				<updateRateHZ>10.0</updateRateHZ>
+				<gaussianNoise>0.0</gaussianNoise>
+				<xyzOffset>0 0 0</xyzOffset>
+				<rpyOffset>0 0 0</rpyOffset>
+			</plugin>
+		</sensor>
+	</gazebo>
+
+	<!-- Imu Joint -->
+	<joint name="base_link_to_imu_sensor" type="fixed">
+		<axis xyz="0 0 1"/>
+		<origin xyz="${base_x} ${base_y} ${base_z + (h_base/2)}"
+			rpy="0 0 1"/>
+		<parent link="base_link"/>
+		<child link="imu_link"/>
+	</joint>
+
+	
+	<!-- Camera Link -->
+	<link name="bottom_camera_link">
+		<visual>
+			<geometry>
+				<box size="${camera_length} ${camera_width} ${camera_height}" />
+				<origin xyz="${base_x} ${base_y} 0" rpy="${PI} 0 0"/>
+			</geometry>
+			<material name="white">
+				<color rgba="1 1 1 1"/>
+			</material>
+		</visual>
+		<collision>
+			<geometry>
+				<box size="${camera_length} ${camera_width} ${camera_height}" />
+				<origin xyz="${base_x} ${base_y} 0" rpy="${PI} 0 0"/>
+			</geometry>
+		</collision>
+		<inertial>
+			<mass value="${camera_mass}"/>
+			<inertia ixx="${1/12 *camera_mass*(camera_width*camera_width + camera_length*camera_length)}" ixy="0" 
+			ixz="0"
+			iyy="${1/12 *camera_mass*(camera_width*camera_width + camera_height*camera_height)}" 
+			iyz="0" 
+			izz="${1/12 *camera_mass*(camera_width*camera_width + camera_length*camera_length)}"/>
+		</inertial>
+	</link>
+	<!-- Camera Joint -->
+	<joint name="base_to_bottom_camera_link" type="fixed">
+		<parent link="base_link"/>
+		<child link="bottom_camera_link"/>
+		<origin xyz="0 0 0" rpy="${PI} 0 0"/>
+	</joint>
+
+	<gazebo reference="bottom_camera_link">
+		<material>Gazebo/White</material>
+		<pose>0 0 0 ${PI} 0 0</pose>
+		<sensor name="camera" type="bottomcamera" >
+			<update_rate>30.0</update_rate>
+			<visualize>true</visualize>
+			<camera name="bottom_camera">
+				<horizontal_fov>1.39626</horizontal_fov>
+	    		<image>
+	    			<width>640</width>
+	    			<height>480</height>
+	    			<format>R8G8B8</format>
+	    		</image>
+	    		<clip>
+	    			<near>0.1</near>
+	    			<far>500</far>
+	    		</clip>
+	    		<noise>
+	    			<type>gaussian</type>
+	    			<mean>0.0</mean>
+	    			<stddev>0.07</stddev>
+	    		</noise>
+	    	</camera>
+	    	<plugin name="bottom_camera_controller" filename="libgazebo_ros_camera.so">
+	    		<always_on>1</always_on>
+	    		<visualize>true</visualize>
+	    		<update_rate>30.0</update_rate>
+	    		<imageTopicName>bottom_camera_image_raw</imageTopicName>
+	    		<frameName>bottom_camera_link</frameName>
+	    		<hackBaseline>0.07</hackBaseline>
+	        	<distortionK1>0.0</distortionK1>
+    	    	<distortionK2>0.0</distortionK2>
+        		<distortionK3>0.0</distortionK3>
+        		<distortionT1>0.0</distortionT1>
+				<distortionT2>0.0</distortionT2>
+			</plugin>
+		</sensor>
+	</gazebo>
+
+
+	<!-- Front Arm -->
+	<link name="front_arm">
+		<visual>
+			<geometry>
+				<box size="${l_arm} ${w_arm} ${h_arm}"/>
+			</geometry>
+			<origin xyz="${base_x + l_arm*0.5} 0 0" rpy="0 0 0" />
+			<material name="white">
+				<color rgba="1 1 1 1"/>
+			</material>
+		</visual>
+		<!-- Front Arm Collision -->
+		<collision>
+			<geometry>
+				<box size="${l_arm} ${w_arm} ${h_arm}"/>
+			</geometry>
+			<origin xyz="${base_x + l_arm*0.5} 0 0" rpy="0 0 0" />
+		</collision>
+		<inertial>
+			<mass value="${arm_m}"/>
+			<inertia ixx="${1/12 * arm_m * (w_arm*w_arm + l_arm*l_arm) }" ixy="0" ixz="0" 
+					 iyy="${1/12 * arm_m * (w_arm*w_arm + h_arm*h_arm) }" iyz="0" izz="${1/12 * arm_m * (4*l_arm*l_arm + w_arm*w_arm) }" />
+		</inertial>
+	</link>
+
+	<gazebo reference="front_arm">
+		<material>Gazebo/White</material>
+	</gazebo>
+
+	<!-- Front Motor Link -->
+	<link name="front_motor">
+		<visual>
+			<geometry>
+				<cylinder radius="${motor_radius}" length="${motor_height}"/>
+			</geometry>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="magenta">
+				<color rgba="1 0 1 1"/>
+			</material>
+		</visual>
+		<!-- Front Motor Collision -->
+		<collision>
+			<geometry>
+				<cylinder radius="${motor_radius}" length="${motor_height}" />
+				<origin xyz="0 0 0" rpy="0 0 0"/>
+			</geometry>
+		</collision>
+		<inertial>
+			<mass value="${motor_m}"/>
+			<inertia ixx="${motor_m * (3*motor_radius*motor_radius + motor_height*motor_height)/12}" ixy="0" ixz="0"
+					 iyy="${motor_m * (3*motor_radius*motor_radius + motor_height*motor_height)/12}" iyz="0" izz="${motor_m*motor_radius*motor_radius*0.5}"/>
+		</inertial>
+	</link>
+
+	<gazebo reference="front_motor">
+		<material>Gazebo/DarkMagentaTransparent</material>
+	</gazebo>
+
+	<!-- Front Rotor Link -->
+	<link name="front_rotor">
+		<visual>
+			<geometry>
+				<cylinder radius="${rotor_radius}" length="${rotor_height}"/>
+			</geometry> 
+			<origin xyz="0.0 0 0" rpy="0 0 0"/>
+			<material name="black">
+				<color rgba="0 0 0 0.5"/>
+			</material>
+		</visual>
+		<!-- Front Rotor Collision -->
+		<collision>
+			<geometry>
+				<cylinder radius="${rotor_radius}" length="${rotor_height}"/>
+				<origin xyz="0.0 0 0" rpy="0 0 0"/>
+			</geometry>
+		</collision>
+		<inertial>
+			<mass value="${rotor_m}"/>
+			<inertia ixx="${rotor_m * rotor_radius*motor_radius/4}" ixy="0" ixz="0"
+					 iyy="${rotor_m * rotor_radius*motor_radius/4}" iyz="0" izz="${rotor_m * rotor_radius*motor_radius*0.5}"/>
+		</inertial>
+	</link>
+
+	<gazebo reference="front_rotor">
+		<material>Gazebo/Black</material>
+	</gazebo>
+
+	<!---                           Front Joints                         -->
+	<!-- Base to the front arm -->
+	<joint name="base_to_front_arm" type="fixed">
+		<parent link="base_link"/>
+		<child link="front_arm"/>
+		<origin xyz="${l_base*0.5} 0.0 ${h_base*0.5 + base_offset*0.5}" rpy="0 0 0"/>
+		<!-- <origin xyz="0.025 0 0.02" rpy="0 0 0"/> -->
+	</joint>
+	<!-- Front Motor Joint -->
+	<joint name="front_arm_to_front_motor" type="fixed">
+		<parent link="front_arm"/>
+		<child link="front_motor"/>
+		<origin xyz="${l_arm - motor_radius} 0 ${h_arm}" rpy="0 0 0"/>
+	</joint>
+	<!-- Front Motor to Front Rotor -->
+	<joint name="front_motor_to_front_rotor" type="continuous">
+		<parent link="front_motor"/>
+		<child link="front_rotor"/>
+		<origin xyz="0 0 ${motor_height*0.5}" rpy="0 0 0"/>
+		<axis xyz="0 0 1"/>
+	</joint>
+
+	<!-- Rear Arm -->
+	<link name="rear_arm">
+		<visual>
+			<geometry>
+				<box size="${l_arm} ${w_arm} ${h_arm}"/>
+			</geometry>
+			<origin xyz="${base_x + l_arm*0.5} 0 0" rpy="0 0 0" />
+			<material name="white">
+				<color rgba="1 1 1 1"/>
+			</material>
+		</visual>
+		<!-- Rear Arm Collision -->
+		<collision>
+			<geometry>
+				<box size="${l_arm} ${w_arm} ${h_arm}"/>
+			</geometry>
+			<origin xyz="${base_x + l_arm*0.5} 0 0" rpy="0 0 0" />
+		</collision>
+		<inertial>
+			<mass value="${arm_m}"/>
+			<inertia ixx="${1/12 * arm_m * (w_arm*w_arm + l_arm*l_arm) }" ixy="0" ixz="0" 
+					 iyy="${1/12 * arm_m * (w_arm*w_arm + h_arm*h_arm) }" iyz="0" izz="${1/12 * arm_m * (4*l_arm*l_arm + w_arm*w_arm) }" />
+		</inertial>
+	</link>
+
+	<gazebo reference="rear_arm">
+		<material>Gazebo/White</material>
+	</gazebo>
+
+	<!-- Rear Motor Link -->
+	<link name="rear_motor">
+		<visual>
+			<geometry>
+				<cylinder radius="${motor_radius}" length="${motor_height}"/>
+			</geometry>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="magenta">
+				<color rgba="1 0 1 1"/>
+			</material>
+		</visual>
+		<!-- Rear Motor Collision -->
+		<collision>
+			<geometry>
+				<cylinder radius="${motor_radius}" length="${motor_height}" />
+				<origin xyz="0 0 0" rpy="0 0 0"/>
+			</geometry>
+		</collision>
+		<inertial>
+			<mass value="${motor_m}"/>
+			<inertia ixx="${motor_m * (3*motor_radius*motor_radius + motor_height*motor_height)/12}" ixy="0" ixz="0"
+					 iyy="${motor_m * (3*motor_radius*motor_radius + motor_height*motor_height)/12}" iyz="0" izz="${motor_m*motor_radius*motor_radius*0.5}"/>
+		</inertial>
+	</link>
+
+	<gazebo reference="rear_motor">
+		<material>Gazebo/DarkMagentaTransparent</material>
+	</gazebo>
+
+	<!-- Rear Rotor Link -->
+	<link name="rear_rotor">
+		<visual>
+			<geometry>
+				<cylinder radius="${rotor_radius}" length="${rotor_height}"/>
+			</geometry> 
+			<origin xyz="0.0 0 0" rpy="0 0 0"/>
+			<material name="black">
+				<color rgba="0 0 0 0.5"/>
+			</material>
+		</visual>
+		<!-- Rear Rotor Collision -->
+		<collision>
+			<geometry>
+				<cylinder radius="${rotor_radius}" length="${rotor_height}"/>
+				<origin xyz="0.0 0 0" rpy="0 0 0"/>
+			</geometry>
+		</collision>
+		<inertial>
+			<mass value="${rotor_m}"/>
+			<inertia ixx="${rotor_m * rotor_radius*motor_radius/4}" ixy="0" ixz="0"
+					 iyy="${rotor_m * rotor_radius*motor_radius/4}" iyz="0" izz="${rotor_m * rotor_radius*motor_radius*0.5}"/>
+		</inertial>
+	</link>
+
+	<gazebo reference="rear_rotor">
+		<material>Gazebo/Black</material>
+	</gazebo>
+
+	<!---                           Rear Joints                         -->
+	<!-- Base to the Rear arm -->
+	<joint name="base_to_rear_arm" type="fixed">
+		<parent link="base_link"/>
+		<child link="rear_arm"/>
+		<origin xyz="${l_base*0.5*-1} 0.0 ${h_base*0.5 + base_offset*0.5}" rpy="0 0 ${PI}"/>
+		<!-- <origin xyz="0.025 0 0.02" rpy="0 0 0"/> -->
+	</joint>
+	<!-- Rear Motor Joint -->
+	<joint name="rear_arm_to_rear_motor" type="fixed">
+		<parent link="rear_arm"/>
+		<child link="rear_motor"/>
+		<origin xyz="${l_arm - motor_radius} 0 ${h_arm}" rpy="0 0 0"/>
+	</joint>
+	<!-- Rear Motor to Rear Rotor -->
+	<joint name="rear_motor_to_rear_rotor" type="continuous">
+		<parent link="rear_motor"/>
+		<child link="rear_rotor"/>
+		<origin xyz="0 0 ${motor_height*0.5}" rpy="0 0 0"/>
+		<axis xyz="0 0 1"/>
+	</joint>
+
+	<!-- Right Arm -->
+	<link name="right_arm">
+		<visual>
+			<geometry>
+				<box size="${l_arm} ${w_arm} ${h_arm}"/>
+			</geometry>
+			<origin xyz="${base_x + l_arm*0.5} 0 0" rpy="0 0 0" />
+			<material name="red">
+				<color rgba="1 0 0 1"/>
+			</material>
+		</visual>
+		<!-- Right Arm Collision -->
+		<collision>
+			<geometry>
+				<box size="${l_arm} ${w_arm} ${h_arm}"/>
+			</geometry>
+			<origin xyz="${base_x + l_arm*0.5} 0 0" rpy="0 0 0" />
+		</collision>
+		<inertial>
+			<mass value="${arm_m}"/>
+			<inertia ixx="${1/12 * arm_m * (w_arm*w_arm + l_arm*l_arm) }" ixy="0" ixz="0" 
+					 iyy="${1/12 * arm_m * (w_arm*w_arm + h_arm*h_arm) }" iyz="0" izz="${1/12 * arm_m * (4*l_arm*l_arm + w_arm*w_arm) }" />
+		</inertial>
+	</link>
+
+	<gazebo reference="right_arm">
+		<material>Gazebo/Red</material>
+	</gazebo>
+
+	<!-- Right Motor Link -->
+	<link name="right_motor">
+		<visual>
+			<geometry>
+				<cylinder radius="${motor_radius}" length="${motor_height}"/>
+			</geometry>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="magenta">
+				<color rgba="1 0 1 1"/>
+			</material>
+		</visual>
+		<!-- Right Motor Collision -->
+		<collision>
+			<geometry>
+				<cylinder radius="${motor_radius}" length="${motor_height}" />
+				<origin xyz="0 0 0" rpy="0 0 0"/>
+			</geometry>
+		</collision>
+		<inertial>
+			<mass value="${motor_m}"/>
+			<inertia ixx="${motor_m * (3*motor_radius*motor_radius + motor_height*motor_height)/12}" ixy="0" ixz="0"
+					 iyy="${motor_m * (3*motor_radius*motor_radius + motor_height*motor_height)/12}" iyz="0" izz="${motor_m*motor_radius*motor_radius*0.5}"/>
+		</inertial>
+	</link>
+
+	<gazebo reference="right_motor">
+		<material>Gazebo/DarkMagentaTransparent</material>
+	</gazebo>
+
+	<!-- Right Rotor Link -->
+	<link name="right_rotor">
+		<visual>
+			<geometry>
+				<cylinder radius="${rotor_radius}" length="${rotor_height}"/>
+			</geometry> 
+			<origin xyz="0.0 0 0" rpy="0 0 0"/>
+			<material name="black">
+				<color rgba="0 0 0 0.5"/>
+			</material>
+		</visual>
+		<!-- Right Rotor Collision -->
+		<collision>
+			<geometry>
+				<cylinder radius="${rotor_radius}" length="${rotor_height}"/>
+				<origin xyz="0.0 0 0" rpy="0 0 0"/>
+			</geometry>
+		</collision>
+		<inertial>
+			<mass value="${rotor_m}"/>
+			<inertia ixx="${rotor_m * rotor_radius*motor_radius/4}" ixy="0" ixz="0"
+					 iyy="${rotor_m * rotor_radius*motor_radius/4}" iyz="0" izz="${rotor_m * rotor_radius*motor_radius*0.5}"/>
+		</inertial>
+	</link>
+
+	<gazebo reference="right_rotor">
+		<material>Gazebo/Black</material>
+	</gazebo>
+
+	<!---                           Right Joints                         -->
+	<!-- Base to the Right arm -->
+	<joint name="base_to_right_arm" type="fixed">
+		<parent link="base_link"/>
+		<child link="right_arm"/>
+		<origin xyz="0.0 ${l_base*0.5*-1} ${h_base*0.5 + base_offset*0.5}" rpy="0 0 ${-1*PI/2}"/>
+		<!-- <origin xyz="0.025 0 0.02" rpy="0 0 0"/> -->
+	</joint>
+	<!-- Right Motor Joint -->
+	<joint name="right_arm_to_right_motor" type="fixed">
+		<parent link="right_arm"/>
+		<child link="right_motor"/>
+		<origin xyz="${l_arm - motor_radius} 0 ${h_arm}" rpy="0 0 ${-1*PI/2}"/>
+	</joint>
+	<!-- Right Motor to Right Rotor -->
+	<joint name="right_motor_to_right_rotor" type="continuous">
+		<parent link="right_motor"/>
+		<child link="right_rotor"/>
+		<origin xyz="0 0 ${motor_height*0.5}" rpy="0 0 0"/>
+		<axis xyz="0 0 1"/>
+	</joint>
+
+	<!-- Left Arm -->
+	<link name="left_arm">
+		<visual>
+			<geometry>
+				<box size="${l_arm} ${w_arm} ${h_arm}"/>
+			</geometry>
+			<origin xyz="${base_x + l_arm*0.5} 0 0" rpy="0 0 0" />
+			<material name="red">
+				<color rgba="1 0 0 1"/>
+			</material>
+		</visual>
+		<!-- Left Arm Collision -->
+		<collision>
+			<geometry>
+				<box size="${l_arm} ${w_arm} ${h_arm}"/>
+			</geometry>
+			<origin xyz="${base_x + l_arm*0.5} 0 0" rpy="0 0 0" />
+		</collision>
+		<inertial>
+			<mass value="${arm_m}"/>
+			<inertia ixx="${1/12 * arm_m * (w_arm*w_arm + l_arm*l_arm) }" ixy="0" ixz="0" 
+					 iyy="${1/12 * arm_m * (w_arm*w_arm + h_arm*h_arm) }" iyz="0" izz="${1/12 * arm_m * (4*l_arm*l_arm + w_arm*w_arm) }" />
+		</inertial>
+	</link>
+
+	<gazebo reference="left_arm">
+		<material>Gazebo/Red</material>
+	</gazebo>
+
+	<!-- Left Motor Link -->
+	<link name="left_motor">
+		<visual>
+			<geometry>
+				<cylinder radius="${motor_radius}" length="${motor_height}"/>
+			</geometry>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<material name="magenta">
+				<color rgba="1 0 1 1"/>
+			</material>
+		</visual>
+		<!-- Left Motor Collision -->
+		<collision>
+			<geometry>
+				<cylinder radius="${motor_radius}" length="${motor_height}" />
+				<origin xyz="0 0 0" rpy="0 0 0"/>
+			</geometry>
+		</collision>
+		<inertial>
+			<mass value="${motor_m}"/>
+			<inertia ixx="${motor_m * (3*motor_radius*motor_radius + motor_height*motor_height)/12}" ixy="0" ixz="0"
+					 iyy="${motor_m * (3*motor_radius*motor_radius + motor_height*motor_height)/12}" iyz="0" izz="${motor_m*motor_radius*motor_radius*0.5}"/>
+		</inertial>
+	</link>
+
+	<gazebo reference="left_motor">
+		<material>Gazebo/DarkMagentaTransparent</material>
+	</gazebo>
+
+	<!-- Leftt Rotor Link -->
+	<link name="left_rotor">
+		<visual>
+			<geometry>
+				<cylinder radius="${rotor_radius}" length="${rotor_height}"/>
+			</geometry> 
+			<origin xyz="0.0 0 0" rpy="0 0 0"/>
+			<material name="black">
+				<color rgba="0 0 0 0.5"/>
+			</material>
+		</visual>
+		<!-- Left Rotor Collision -->
+		<collision>
+			<geometry>
+				<cylinder radius="${rotor_radius}" length="${rotor_height}"/>
+				<origin xyz="0.0 0 0" rpy="0 0 0"/>
+			</geometry>
+		</collision>
+		<inertial>
+			<mass value="${rotor_m}"/>
+			<inertia ixx="${rotor_m * rotor_radius*motor_radius/4}" ixy="0" ixz="0"
+					 iyy="${rotor_m * rotor_radius*motor_radius/4}" iyz="0" izz="${rotor_m * rotor_radius*motor_radius*0.5}"/>
+		</inertial>
+	</link>
+
+	<gazebo reference="left_rotor">
+		<material>Gazebo/Black</material>
+	</gazebo>
+
+	<!---                           Left Joints                         -->
+	<!-- Base to the Left arm -->
+	<joint name="base_to_left_arm" type="fixed">
+		<parent link="base_link"/>
+		<child link="left_arm"/>
+		<origin xyz="0.0 ${l_base*0.5} ${h_base*0.5 + base_offset*0.5}" rpy="0 0 ${PI/2}"/>
+		<!-- <origin xyz="0.025 0 0.02" rpy="0 0 0"/> -->
+	</joint>
+	<!-- Right Motor Joint -->
+	<joint name="left_arm_to_left_motor" type="fixed">
+		<parent link="left_arm"/>
+		<child link="left_motor"/>
+		<origin xyz="${l_arm - motor_radius} 0 ${h_arm}" rpy="0 0 ${PI/2}"/>
+	</joint>
+	<!-- Left Motor to Left Rotor -->
+	<joint name="left_motor_to_left_rotor" type="continuous">
+		<parent link="left_motor"/>
+		<child link="left_rotor"/>
+		<origin xyz="0 0 ${motor_height*0.5}" rpy="0 0 0"/>
+		<axis xyz="0 0 1"/>
+	</joint>
+
+	<!-- Quadrotor Drive Plugin -->
+	<gazebo>
+		<plugin name="quadrotor_drive_controller" filename="libgeneric_quad_sim.so">
+			<rosDebugLevel>Debug</rosDebugLevel>
+			<publish_tf_>true</publish_tf_>
+			<publishRotorTF>true</publishRotorTF>
+			<publishRotorJointState>true</publishRotorJointState>
+			<commandTopic>cmd_vel</commandTopic>
+			<robotBaseFrame>base_link</robotBaseFrame>
+			<imu_data>imu_data</imu_data>
+			<forceTopic>cmd_force</forceTopic>
+			<updateRate>1000.0</updateRate>
+			<cameraMass>camera_mass</cameraMass>
+			<baseMass>base_m</baseMass>
+			<baseLength>l_base</baseLength>
+			<armMass>arm_m</armMass>
+			<armLength>l_arm</armLength>
+			<motorMass>motor_m</motorMass>
+			<motorRadius>motor_radius</motorRadius>
+			<rotorMass>rotor_m</rotorMass>
+			<rotorRadius>rotor_radius</rotorRadius>
+			<rotorTorque>0.0</rotorTorque>
+			<rotorAccel>0.0</rotorAccel>
+			<frontJoint>ront_motor_to_front_rotor</frontJoint>
+			<rearJoint>rear_motor_to_rear_rotor</rearJoint>
+			<leftJoint>left_motor_to_left_rotor</leftJoint>
+			<rightJoint>right_motor_to_right_rotor</rightJoint>
+		</plugin>
+	</gazebo>
+
+</robot>
